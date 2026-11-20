@@ -22,9 +22,13 @@ stages:
 
 package:deb:
   stage: build
-  image: vm-debci:5000/debian-trixie-qt6:latest
+  image:
+    name: vm-debci:5000/debian-trixie-qt6:latest
+    pull_policy: always
   extends: .build_rules
   script:
+    - grep PRETTY_NAME /etc/os-release
+    - rpm -q qt6-qtbase-devel || true
     - *version
     - command -v dpkg-shlibdeps >/dev/null || (apt-get update -qq && apt-get install -y -qq dpkg-dev)
     - cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DAVM_EMON_VERSION="$BUILD_VERSION"
@@ -38,7 +42,9 @@ package:deb:
 
 package:rpm:
   stage: build
-  image: vm-debci:5000/fedora-qt6:latest
+  image:
+    name: vm-debci:5000/fedora-qt6:latest
+    pull_policy: always
   extends: .build_rules
   script:
     - *version
@@ -102,7 +108,9 @@ package:windows:
 # always resolve to the newest release. Plain curl with the job token, no release-cli image needed.
 release:
   stage: release
-  image: vm-debci:5000/debian-trixie-qt6:latest
+  image:
+    name: vm-debci:5000/debian-trixie-qt6:latest
+    pull_policy: always
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
   needs:
