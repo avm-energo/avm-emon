@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AVM EMON
+Comment=GUI client for the EM-3.1KM (EMon) power-quality meter
+Exec=avm-emon
+Terminal=false
+Categories=Utility;Electronics;
