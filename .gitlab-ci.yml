@@ -2,7 +2,7 @@ stages:
   - build
   - release
 
-# Same pre-baked Qt 6 images as libavm-emon / avm-tester (dockers repo). libavm-emon itself is fetched by CMake
+# Same pre-baked Qt 6 images as libavm-emon / avm-tester (dockers repo). libavm-emon and libavm-vectorwidget are fetched by CMake
 # from git.avmenergo.ru (anonymous HTTPS), so the runners need network access to that host.
 #
 # Version: tag vX.Y.Z -> X.Y.Z; any other build -> <project version>.<pipeline iid> (e.g. 0.1.0.47), which both

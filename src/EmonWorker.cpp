@@ -154,7 +154,15 @@ void EmonWorker::pollOnce()
         try
         {
             const avm_emon::AnalogInputs raw = device_->getAnalogInputs();
-            emit measured(avm_emon::calibrate(raw, limits_), raw.appliedCurrentLimitType,
+            // The ranges are real measurement ranges (manual, 4.2.3), not a transformer ratio, so the
+            // reported RMS values are already in amps/volts: no scaling by the selected range.
+            avm_emon::CalibratedAnalogInputs v;
+            v.Ia = raw.Ia; v.Ib = raw.Ib; v.Ic = raw.Ic;
+            v.Ua = raw.Ua; v.Ub = raw.Ub; v.Uc = raw.Uc;
+            v.frequency = raw.frequency;
+            v.phiIaUa = raw.phiIaUa; v.phiIbUb = raw.phiIbUb; v.phiIcUc = raw.phiIcUc;
+            v.phiUaUb = raw.phiUaUb; v.phiUbUc = raw.phiUbUc; v.phiUcUa = raw.phiUcUa;
+            emit measured(v, raw.appliedCurrentLimitType,
                 raw.appliedCurrentLimitIndex, raw.appliedVoltageLimitIndex);
             ok = true;
         } catch (const avm_emon::Exception &e)

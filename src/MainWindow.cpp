@@ -14,6 +14,7 @@
 #include <QSerialPortInfo>
 #include <QStatusBar>
 #include <QVBoxLayout>
+#include <libavm-vectorwidget/VectorDiagram.h>
 
 namespace
 {
@@ -113,31 +114,38 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     anaV->addWidget(new QLabel(tr("<b>Measurements</b>")));
     auto *g = new QGridLayout;
     anaV->addLayout(g);
-    const char *hdr[] = { "", "U, V (RMS)", "I, A (RMS)", "I/U angle, °" };
-    for (int c = 0; c < 4; ++c)
+    const char *hdr[] = { "", "U, V (RMS)", "I, A (RMS)", "I/U angle, °", "U-U angle, °" };
+    for (int c = 0; c < 5; ++c)
         g->addWidget(new QLabel(tr(hdr[c])), 0, c);
     for (int k = 0; k < 3; ++k)
     {
         u_[k] = display(3);
         i_[k] = display(4);
         phi_[k] = display(2);
+        uu_[k] = display(2);
         auto *badge = new QLabel(QString(QChar('A' + k)));
         badge->setAlignment(Qt::AlignCenter);
         badge->setMinimumWidth(28);
         badge->setStyleSheet(QStringLiteral("QLabel{background:%1;color:%2;font-weight:bold;border-radius:4px;padding:3px}")
                                  .arg(QLatin1String(kPhase[k].badge), QLatin1String(kPhase[k].text)));
         g->addWidget(badge, k + 1, 0);
-        for (QDoubleSpinBox *sb : { u_[k], i_[k], phi_[k] })
+        for (QDoubleSpinBox *sb : { u_[k], i_[k], phi_[k], uu_[k] })
             sb->setStyleSheet(QStringLiteral("QDoubleSpinBox{background:%1;color:#000000}")
                                   .arg(QLatin1String(kPhase[k].tint)));
         g->addWidget(u_[k], k + 1, 1);
         g->addWidget(i_[k], k + 1, 2);
         g->addWidget(phi_[k], k + 1, 3);
+        g->addWidget(uu_[k], k + 1, 4);
+        uu_[k]->setToolTip(tr("Angle between the phase voltages: UA1-UB1, UB1-UC1, UC1-UA1"));
     }
     freq_ = display(3, tr(" Hz"));
     g->addWidget(new QLabel(tr("Frequency:")), 4, 0);
     g->addWidget(freq_, 4, 1);
-    root->addWidget(anaBox);
+    auto *body = new QHBoxLayout;
+    auto *left = new QVBoxLayout;
+    body->addLayout(left, 1);
+    root->addLayout(body, 1);
+    left->addWidget(anaBox);
 
     // --- Ranges ---
     auto *rangeBox = new QGroupBox(tr("Ranges"));
@@ -155,12 +163,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     rg->addWidget(new QLabel(tr("Voltage range:")), 2, 0);
     rg->addWidget(voltRangeCombo_, 2, 1);
     rg->setColumnStretch(2, 1);
-    root->addWidget(rangeBox);
+    left->addWidget(rangeBox);
 
     log_ = new QPlainTextEdit;
     log_->setReadOnly(true);
     log_->setMaximumBlockCount(2000);
-    root->addWidget(log_, 1);
+    left->addWidget(log_, 1);
+
+    // --- Vector diagram ---
+    diagram_ = new avm_vectorwidget::VectorDiagram;
+    diagram_->setMinimumWidth(340);
+    diagram_->setPalette(palette()); // keep the green window tint (the stylesheet below would otherwise reset it)
+    body->addWidget(diagram_, 1);
     statusBar()->setStyleSheet(QStringLiteral("QStatusBar, QStatusBar QLabel{color:#000000}"));
     statusBar()->addWidget(new QLabel(tr("Created by AVM-Energo LLC with Claude, 2026")));
     statusBar()->addPermanentWidget(infoLabel_);
@@ -200,7 +214,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     refreshPorts();
     onConnected(false);
-    resize(760, 620);
+    resize(1120, 640);
 }
 
 MainWindow::~MainWindow()
@@ -276,13 +290,25 @@ void MainWindow::onSupportedLimits(const avm_emon::SupportedLimits &limits)
 void MainWindow::onMeasured(const avm_emon::CalibratedAnalogInputs &v, quint16 curType, quint16 curIdx, quint16 voltIdx)
 {
     const double u[3] = { v.Ua, v.Ub, v.Uc }, i[3] = { v.Ia, v.Ib, v.Ic }, phi[3] = { v.phiIaUa, v.phiIbUb, v.phiIcUc };
+    const double uu[3] = { v.phiUaUb, v.phiUbUc, v.phiUcUa };
     for (int k = 0; k < 3; ++k)
     {
         u_[k]->setValue(u[k]);
         i_[k]->setValue(i[k]);
         phi_[k]->setValue(phi[k]);
+        uu_[k]->setValue(uu[k]);
     }
     freq_->setValue(v.frequency);
+
+    // Phase A is the reference (0 deg); B and C follow from the measured angles between the voltages
+    // (UA1-UB1 and UB1-UC1 are positive when the next phase lags). The meter reports phi = U angle - I angle
+    // (verified against RETOM: U 0/-90/-200, I 90/-30/-150 gave -91/-61/-50), so I angle = U angle - phi.
+    const double angB = -uu[0], angC = angB - uu[1];
+    diagram_->setVoltage(0, u[0], 0.0);
+    diagram_->setVoltage(1, u[1], angB);
+    diagram_->setVoltage(2, u[2], angC);
+    for (int k = 0; k < 3; ++k)
+        diagram_->setCurrentRelative(k, i[k], -phi[k]);
 
     if (pendingLimits_)
         return;
@@ -308,8 +334,9 @@ void MainWindow::onBusy(bool on)
 
 void MainWindow::clearValues()
 {
+    diagram_->clear();
     for (int k = 0; k < 3; ++k)
-        for (QDoubleSpinBox *sb : { u_[k], i_[k], phi_[k] })
+        for (QDoubleSpinBox *sb : { u_[k], i_[k], phi_[k], uu_[k] })
             sb->setValue(0);
     freq_->setValue(0);
 }

@@ -11,6 +11,7 @@ class QDoubleSpinBox;
 class QLabel;
 class QPlainTextEdit;
 class QPushButton;
+namespace avm_vectorwidget { class VectorDiagram; }
 
 class MainWindow : public QMainWindow
 {
@@ -41,9 +42,10 @@ private:
 
     QComboBox *portCombo_, *linkCombo_;
     QPushButton *refreshBtn_, *connectBtn_, *disconnectBtn_;
-    std::array<QDoubleSpinBox *, 3> u_, i_, phi_;
+    std::array<QDoubleSpinBox *, 3> u_, i_, phi_, uu_;
     QDoubleSpinBox *freq_;
     QComboBox *curTypeCombo_, *curRangeCombo_, *voltRangeCombo_;
+    avm_vectorwidget::VectorDiagram *diagram_;
     QLabel *infoLabel_, *stateLabel_;
     QPlainTextEdit *log_;
 

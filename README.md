@@ -22,8 +22,9 @@ All releases: [https://git.avmenergo.ru/avm-energo/avm-emon/-/releases](https://
 ## Features
 
 - Connection: port picker (FTDI 0403:6001 auto-highlighted), link type (USB / RS-232), connect/disconnect.
-- Measurements: U / I (RMS) / I-U angle per phase A (yellow) / B (green) / C (red) and frequency, refreshed continuously. Values are calibrated to match the device's front panel.
+- Measurements: U / I (RMS) / I-U angle per phase A (yellow) / B (green) / C (red) and frequency, refreshed continuously. Values are shown as the device reports them (the range selection does not rescale them).
 - Ranges: comboboxes for the current sensor type (transformer / clamp / UPTT), the current range and the voltage range, filled from the list the device reports; the selection follows the range the device is actually using.
+- Vector diagram of the measured voltages and currents (libavm-vectorwidget). Phase A is the reference; the voltage angles come from the measured angles between the phase voltages.
 - All device calls run on a worker thread, so the window never freezes while the meter answers.
 
 ## Build
@@ -34,4 +35,4 @@ cmake --build build
 ./build/avm-emon
 ```
 
-Uses an installed libavm-emon, else `../libavm-emon`, else fetches it from git (https://git.avmenergo.ru/avm-energo/libavm-emon.git).
+Uses an installed libavm-emon and libavm-vectorwidget, else `../libavm-emon` / `../libavm-vectorwidget`, else fetches them from git (https://git.avmenergo.ru/avm-energo/libavm-emon.git, https://git.avmenergo.ru/avm-energo/libavm-vectorwidget.git).
