@@ -94,6 +94,10 @@ package:windows:
       $exe = Get-ChildItem build -Recurse -Filter avm-emon.exe | Select-Object -First 1
       if (-not $exe) { throw "avm-emon.exe not found under build\" }
       Copy-Item $exe.FullName deploy\
+      # libavm-emon is built as a DLL next to (or under) the exe's build folder
+      $dll = Get-ChildItem build -Recurse -Filter libavm-emon.dll | Select-Object -First 1
+      if (-not $dll) { throw "libavm-emon.dll not found under build\" }
+      Copy-Item $dll.FullName deploy\
       & "$env:QT_DIR\bin\windeployqt.exe" --release --no-translations "deploy\avm-emon.exe"; Check "windeployqt"
       & $iscc /Q "/DMyAppVersion=$ver" "/DDeployDir=$PWD\deploy" "/DOutDir=$PWD\dist" packaging\windows\avm-emon.iss; Check "ISCC"
   artifacts:

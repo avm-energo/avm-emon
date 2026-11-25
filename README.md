@@ -1,6 +1,6 @@
 # avm-emon
 
-[![pipeline status](https://git.avmenergo.ru/avm-energo/avm-emon/badges/master/pipeline.svg)](https://git.avmenergo.ru/avm-energo/avm-emon/-/pipelines)
+[![pipeline status](https://git.avmenergo.ru/avm-energo/avm-emon/badges/main/pipeline.svg)](https://git.avmenergo.ru/avm-energo/avm-emon/-/pipelines)
 [![latest release](https://git.avmenergo.ru/avm-energo/avm-emon/-/badges/release.svg)](https://git.avmenergo.ru/avm-energo/avm-emon/-/releases)
 
 Русская версия: [README-ru.md](README-ru.md)
